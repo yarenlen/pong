@@ -24,6 +24,9 @@ public class Ball : MonoBehaviour
     public AudioClip hitWall;
     public AudioClip hitRacket;
     AudioSource audioSource;
+    public AudioClip scoreRetro;
+    public AudioClip hitWallRetro;
+    public AudioClip hitRacketRetro;
 
     //vfx
     public ParticleSystem particleSytem;
@@ -34,6 +37,7 @@ public class Ball : MonoBehaviour
     public Color hitWallColor;
     public GameObject cam;
     public Vector3 camShakeAmount;
+    public Vector3 scorePunchAmount;
 
     void Start()
     {
@@ -49,40 +53,74 @@ public class Ball : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D col) 
     {
-        iTween.PunchScale(this.gameObject, ballPunchAmount, 0.5f);
+        
         //Hit a Wall?
-        if (col.gameObject.tag == "Wall"){audioSource.PlayOneShot(hitWall); return;}
+        if (col.gameObject.tag == "Wall")
+        {
+            iTween.PunchScale(this.gameObject, ballPunchAmount, 0.5f);
+            audioSource.PlayOneShot(hitWall); 
+            return;
+        }
+        if (col.gameObject.tag == "WallHorizontalRight") 
+        {
+           // audioSource.PlayOneShot(hitWallRetro);
+            return;
+        }
         //Hit left or right wall?
-        else if (col.gameObject.tag == "WallLeft") {
-            ResetBall();
+        else if (col.gameObject.tag == "WallLeft")
+        {
+            iTween.PunchScale(this.gameObject, ballPunchAmount, 0.5f);
+            //play sound
+            audioSource.PlayOneShot(score, 0.5f);
+            //play particle
+            particleSytem.transform.position = this.transform.position;
+            particleSytem.Play();
+            //screenshake
+            iTween.ShakePosition(cam, camShakeAmount, 0.5f);
+            //reset pos
+            transform.position = startPos;
+            //reset direction
+            ydir = 0;
             //point for player right
             scoreRight++;
-            scoreRightText.text = scoreRight.ToString(); 
+            scoreRightText.text = scoreRight.ToString();
+            //punch score
+            iTween.PunchScale(scoreRightGO, scorePunchAmount, 0.5f);
         }
-        else if (col.gameObject.tag == "WallRight") {
-            
-            ResetBall();
+        else if (col.gameObject.tag == "WallRight")
+        {
+            //play sound
+           // audioSource.PlayOneShot(scoreRetro);
+            //reset pos
+            transform.position = startPos;
+            //reset direction
+            ydir = 0;
             //point for player left
             scoreLeft++;
-            scoreLeftText.text = scoreLeft.ToString(); 
+            scoreLeftText.text = scoreLeft.ToString();
+            
         }
+
         //Hit a Racket?
-        else if (col.gameObject.name == "PlayerLeft") {
+        else if (col.gameObject.name == "PlayerLeft")
+        {
+            iTween.PunchScale(this.gameObject, ballPunchAmount, 0.5f);
             //play sound
             audioSource.PlayOneShot(hitRacket);
             //punch
             iTween.PunchScale(playerLeft, racketPunchAmount, 0.5f);
             //change dir
-            xdir = 1; 
+            xdir = 1;
             // Calculate hit Factor
-            ydir = hitFactor(transform.position, col.transform.position, col.collider.bounds.size.y); 
-        } 
-        else if (col.gameObject.name == "PlayerRight") {
-            audioSource.PlayOneShot(hitRacket);
-            iTween.PunchScale(playerRight, racketPunchAmount, 0.5f);
-            xdir = -1; 
+            ydir = hitFactor(transform.position, col.transform.position, col.collider.bounds.size.y);
+        }
+        else if (col.gameObject.name == "PlayerRight")
+        {
+            //audioSource.PlayOneShot(hitRacketRetro);
+            // iTween.PunchScale(playerRight, racketPunchAmount, 0.5f);
+            xdir = -1;
             // Calculate hit Factor
-            ydir = hitFactor(transform.position, col.transform.position, col.collider.bounds.size.y); 
+            ydir = hitFactor(transform.position, col.transform.position, col.collider.bounds.size.y);
         }
 
         // Calculate new direction, make length=1 via .normalized
@@ -100,21 +138,6 @@ public class Ball : MonoBehaviour
         // ||
         // || -1 <- at the bottom of the racket
         return (ballPos.y - racketPos.y) / racketHeight;
-    }
-
-    void ResetBall()
-    {
-        //play sound
-        audioSource.PlayOneShot(score);
-        //play particle
-        particleSytem.transform.position = this.transform.position;
-        particleSytem.Play();
-        //screenshake
-        iTween.ShakePosition(cam, camShakeAmount, 0.5f);
-        //reset pos
-        transform.position = startPos;
-        //reset direction
-        ydir = 0;
     }
 
 }
